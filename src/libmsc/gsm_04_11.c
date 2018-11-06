@@ -587,9 +587,13 @@ int gsm411_send_rp_error(struct gsm_trans *trans, uint8_t msg_ref,
 
 /* Receive a 04.11 TPDU inside RP-DATA / user data */
 static int gsm411_rx_rp_ud(struct msgb *msg, struct gsm_trans *trans,
-			  struct gsm411_rp_hdr *rph)
+			  struct gsm411_rp_hdr *rph,
+			  uint8_t *dst, uint8_t dst_len)
 {
 	int rc = 0;
+
+	if (trans->net->enable_sms_over_gsup)
+		goto sms_over_gsup;
 
 	rc = gsm340_rx_tpdu(trans, msg, rph->msg_ref);
 	if (rc == 0)
@@ -598,6 +602,14 @@ static int gsm411_rx_rp_ud(struct msgb *msg, struct gsm_trans *trans,
 		return gsm411_send_rp_error(trans, rph->msg_ref, rc);
 	else
 		return rc;
+
+sms_over_gsup:
+	/* RP-ACK or RP-ERROR is triggered as soon as we get the response */
+	rc = gsm411_gsup_mo_fwd_sm_req(trans, msg, rph->msg_ref, dst, dst_len);
+	if (rc) /* GSUP message sending error */
+		return gsm411_send_rp_error(trans, rph->msg_ref, rc);
+
+	return 0;
 }
 
 /* Receive a 04.11 RP-DATA message in accordance with Section 7.3.1.2 */
@@ -638,7 +650,7 @@ static int gsm411_rx_rp_data(struct msgb *msg, struct gsm_trans *trans,
 
 	DEBUGP(DLSMS, "DST(%u,%s)\n", dst_len, osmo_hexdump(dst, dst_len));
 
-	return gsm411_rx_rp_ud(msg, trans, rph);
+	return gsm411_rx_rp_ud(msg, trans, rph, dst, dst_len);
 }
 
 static struct gsm_sms *sms_report_alloc(struct gsm_sms *sms)
@@ -775,6 +787,9 @@ static int gsm411_rx_rp_smma(struct msgb *msg, struct gsm_trans *trans,
 {
 	int rc;
 
+	if (trans->net->enable_sms_over_gsup)
+		goto sms_over_gsup;
+
 	rc = gsm411_send_rp_ack(trans, rph->msg_ref);
 
 	/* MS tells us that it has memory for more SMS, we need
@@ -783,6 +798,14 @@ static int gsm411_rx_rp_smma(struct msgb *msg, struct gsm_trans *trans,
 	send_signal(S_SMS_SMMA, trans, NULL, 0);
 
 	return rc;
+
+sms_over_gsup:
+	/* RP-ACK or RP-ERROR is triggered as soon as we get the response */
+	rc = gsm411_gsup_mo_ready_for_sm_req(trans, rph->msg_ref);
+	if (rc) /* GSUP message sending error */
+		return gsm411_send_rp_error(trans, rph->msg_ref, rc);
+
+	return 0;
 }
 
 /* receive RL DATA */
