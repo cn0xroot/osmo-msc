@@ -790,6 +790,9 @@ static int gsm411_rx_rp_ack(struct gsm_trans *trans,
 	 * successfully received a SMS.  We can now safely mark it as
 	 * transmitted */
 
+	if (trans->net->enable_sms_over_gsup)
+		goto sms_over_gsup;
+
 	if (!sms) {
 		LOGP(DLSMS, LOGL_ERROR, "RX RP-ACK but no sms in transaction?!?\n");
 		return gsm411_send_rp_error(trans, rph->msg_ref,
@@ -808,6 +811,10 @@ static int gsm411_rx_rp_ack(struct gsm_trans *trans,
 	trans->sms.sms = NULL;
 
 	return 0;
+
+sms_over_gsup:
+	/* Forward towards ESME via GSUP */
+	return gsm411_gsup_mt_fwd_sm_res(trans, rph->msg_ref);
 }
 
 static int gsm411_rx_rp_error(struct gsm_trans *trans,
@@ -825,6 +832,9 @@ static int gsm411_rx_rp_error(struct gsm_trans *trans,
 	LOGP(DLSMS, LOGL_NOTICE, "%s: RX SMS RP-ERROR, cause %d:%d (%s)\n",
 	     vlr_subscr_name(trans->conn->vsub), cause_len, cause,
 	     get_value_string(gsm411_rp_cause_strs, cause));
+
+	if (trans->net->enable_sms_over_gsup)
+		goto sms_over_gsup;
 
 	if (!sms) {
 		LOGP(DLSMS, LOGL_ERROR,
@@ -851,6 +861,10 @@ static int gsm411_rx_rp_error(struct gsm_trans *trans,
 	trans->sms.sms = NULL;
 
 	return 0;
+
+sms_over_gsup:
+	/* Forward towards ESME via GSUP */
+	return gsm411_gsup_mt_fwd_sm_err(trans, rph->msg_ref, cause);
 }
 
 static int gsm411_rx_rp_smma(struct msgb *msg, struct gsm_trans *trans,
@@ -1101,6 +1115,54 @@ int gsm411_send_sms(struct gsm_network *net,
 
 	rate_ctr_inc(&net->msc_ctrs->ctr[MSC_CTR_SMS_DELIVERED]);
 	db_sms_inc_deliver_attempts(trans->sms.sms);
+
+	return gsm411_rp_sendmsg(&trans->sms.smr_inst, msg,
+		GSM411_MT_RP_DATA_MT, trans->sms.sm_rp_mr,
+		GSM411_SM_RL_DATA_REQ);
+}
+
+/* Low-level function to send raw RP-DATA to a given subscriber */
+int gsm411_send_rp_data(struct gsm_network *net, struct vlr_subscr *vsub,
+			size_t sm_rp_oa_len, const uint8_t *sm_rp_oa,
+			size_t sm_rp_ud_len, const uint8_t *sm_rp_ud)
+{
+	struct gsm_trans *trans;
+	struct msgb *msg;
+	uint8_t *ptr;
+
+	/* Allocate a new transaction for MT SMS */
+	trans = gsm411_alloc_mt_trans(net, vsub);
+	if (!trans)
+		return -ENOMEM;
+
+	/* Allocate a message buffer for to be encoded SMS */
+	msg = gsm411_msgb_alloc();
+	if (!msg) {
+		trans_free(trans);
+		return -ENOMEM;
+	}
+
+	/* Encode RP-DA length */
+	ptr = (uint8_t *) msgb_put(msg, 1);
+	ptr[0] = sm_rp_oa_len;
+
+	/* Encode RP-OA (SMSC address) */
+	ptr = (uint8_t *) msgb_put(msg, sm_rp_oa_len);
+	memcpy(ptr, sm_rp_oa, sm_rp_oa_len);
+
+	/* Encode RP-DA (shall be empty, len=0) */
+	ptr = (uint8_t *) msgb_put(msg, 1);
+	ptr[0] = 0x00;
+
+	/* Encode RP-UD length */
+	ptr = (uint8_t *) msgb_put(msg, 1);
+	ptr[0] = sm_rp_ud_len;
+
+	/* Encode RP-UD itself (SM TPDU) */
+	ptr = (uint8_t *) msgb_put(msg, sm_rp_ud_len);
+	memcpy(ptr, sm_rp_ud, sm_rp_ud_len);
+
+	rate_ctr_inc(&net->msc_ctrs->ctr[MSC_CTR_SMS_DELIVERED]);
 
 	return gsm411_rp_sendmsg(&trans->sms.smr_inst, msg,
 		GSM411_MT_RP_DATA_MT, trans->sms.sm_rp_mr,

@@ -233,3 +233,92 @@ msg_error:
 		msg_name, msg_is_err ? "Err" : "Res");
 	return -EINVAL;
 }
+
+int gsm411_gsup_mt_fwd_sm_res(struct gsm_trans *trans, uint8_t sm_rp_mr)
+{
+	struct osmo_gsup_message gsup_msg;
+
+	LOGP(DLSMS, LOGL_DEBUG, "TX MT-forwardSM-Res\n");
+
+	/* Initialize a new GSUP message */
+	gsup_msg_init(&gsup_msg, OSMO_GSUP_MSGT_MT_FORWARD_SM_RESULT,
+		trans->vsub->imsi, &sm_rp_mr);
+
+	return gsup_msg_send(trans->net, &gsup_msg);
+}
+
+int gsm411_gsup_mt_fwd_sm_err(struct gsm_trans *trans,
+	uint8_t sm_rp_mr, uint8_t cause)
+{
+	struct osmo_gsup_message gsup_msg;
+
+	LOGP(DLSMS, LOGL_DEBUG, "TX MT-forwardSM-Err\n");
+
+	/* Initialize a new GSUP message */
+	gsup_msg_init(&gsup_msg, OSMO_GSUP_MSGT_MT_FORWARD_SM_ERROR,
+		trans->vsub->imsi, &sm_rp_mr);
+
+	/* SM-RP-Cause value */
+	gsup_msg.sm_rp_cause = &cause;
+
+	/* TODO: include cause diagnostic field if present */
+	return gsup_msg_send(trans->net, &gsup_msg);
+}
+
+/* Handles MT SMS (and triggers Paging Request if required) */
+int gsm411_gsup_mt_handler(struct vlr_subscr *vsub,
+	struct osmo_gsup_message *gsup_msg)
+{
+	struct vlr_instance *vlr;
+	struct gsm_network *net;
+	int rc;
+
+	/* Obtain required pointers */
+	vlr = vsub->vlr;
+	net = (struct gsm_network *) vlr->user_ctx;
+
+	/* Associate logging messages with this subscriber */
+	log_set_context(LOG_CTX_VLR_SUBSCR, vsub);
+
+	LOGP(DLSMS, LOGL_DEBUG, "RX MT-forwardSM-Req\n");
+
+	/* Make sure that 'SMS over GSUP' is expected */
+	if (!net->enable_sms_over_gsup) {
+		LOGP(DLSMS, LOGL_NOTICE, "Unexpected MT SMS over GSUP, "
+			"ignoring message...\n");
+		/* TODO: notify sender about that? */
+		return -EIO;
+	}
+
+	/* Verify GSUP message */
+	if (!gsup_msg->sm_rp_mr)
+		goto msg_error;
+	if (!gsup_msg->sm_rp_da_type)
+		goto msg_error;
+	if (!gsup_msg->sm_rp_oa_type)
+		goto msg_error;
+	if (!gsup_msg->sm_rp_ui)
+		goto msg_error;
+
+	/**
+	 * FIXME: SM-RP-MR is not known yet
+	 * TODO: SM-RP-DA is out of our interest
+	 * TODO: SM-RP-OA should contain the SMSC address
+	 */
+	rc = gsm411_send_rp_data(net, vsub,
+		gsup_msg->sm_rp_oa_len, gsup_msg->sm_rp_oa,
+		gsup_msg->sm_rp_ui_len, gsup_msg->sm_rp_ui);
+	if (rc) {
+		LOGP(DLSMS, LOGL_NOTICE, "Failed to send MT SMS, "
+			"ignoring MT-forwardSM-Req message...\n");
+		/* TODO: notify sender about that? */
+		return rc;
+	}
+
+	return 0;
+
+msg_error:
+	/* TODO: notify sender about that? */
+	LOGP(DLSMS, LOGL_NOTICE, "RX malformed MT-forwardSM-Req\n");
+	return -EINVAL;
+}
