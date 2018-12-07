@@ -79,7 +79,7 @@ static int iucs_rx_rab_assign(struct ran_conn *conn, RANAP_RAB_SetupOrModifiedIt
 			return 0;
 		}
 
-		return msc_mgcp_ass_complete(conn, port, addr);
+		return msc_mgcp_ass_complete(conn, addr, port, NULL);
 	}
 
 	LOGP(DIUCS, LOGL_ERROR,

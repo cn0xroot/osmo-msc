@@ -7,6 +7,8 @@
 #include <osmocom/sigtran/sccp_sap.h>
 #include <osmocom/mgcp_client/mgcp_client.h>
 
+struct gsm0808_speech_codec;
+
 enum ran_type {
        RAN_UNKNOWN,
        RAN_GERAN_A,	/* 2G / A-interface */
@@ -197,6 +199,8 @@ void ran_conn_rx_sec_mode_compl(struct ran_conn *conn);
 void ran_conn_classmark_chg(struct ran_conn *conn,
 			    const uint8_t *cm2, uint8_t cm2_len,
 			    const uint8_t *cm3, uint8_t cm3_len);
+void ran_conn_assign_compl(struct ran_conn *conn, const char *rtp_addr, uint16_t rtp_port,
+			   const struct gsm0808_speech_codec *speech_codec_chosen);
 void ran_conn_assign_fail(struct ran_conn *conn, uint8_t cause, uint8_t *rr_cause);
 
 void ran_conn_init(void);

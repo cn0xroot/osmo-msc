@@ -24,6 +24,7 @@
 #include <osmocom/msc/gsm_data.h>
 
 struct ran_conn;
+struct gsm0808_speech_codec;
 
 /* MGCP state handler context. This context information stores all information
  * to handle the direction of the RTP streams via MGCP. There is one instance
@@ -58,6 +59,7 @@ struct mgcp_ctx {
 };
 
 int msc_mgcp_call_assignment(struct gsm_trans *trans);
-int msc_mgcp_ass_complete(struct ran_conn *conn, uint16_t port, char *addr);
+int msc_mgcp_ass_complete(struct ran_conn *conn, const char *rtp_addr, uint16_t rtp_port,
+			  const struct gsm0808_speech_codec *speech_codec_chosen);
 int msc_mgcp_call_complete(struct gsm_trans *trans, uint16_t port, char *addr);
 int msc_mgcp_call_release(struct gsm_trans *trans);
