@@ -24,6 +24,7 @@
 #include <osmocom/msc/debug.h>
 #include <osmocom/msc/vlr.h>
 #include <osmocom/msc/vlr_sgs.h>
+#include <osmocom/msc/paging.h>
 
 #include "vlr_sgs_fsm.h"
 #include "vlr_core.h"
@@ -77,7 +78,8 @@ static void to_null(struct osmo_fsm_inst *fi)
 	vsub->tmsi_new = GSM_RESERVED_TMSI;
 
 	/* Make sure any ongoing paging is aborted. */
-	vsub->cs.is_paging = false;
+	if (vsub->cs.is_paging)
+		paging_expired(vsub);
 
 	/* Ensure that Ts5 (pending paging via SGs) is deleted */
 	if (vlr_sgs_pag_pend(vsub))
@@ -129,6 +131,7 @@ static void sgs_ue_fsm_lau_present(struct osmo_fsm_inst *fi, uint32_t event, voi
 		vsub->la_allowed = true;
 		vsub->imsi_detached_flag = false;
 		vsub->lu_complete = true;
+		vlr_subscr_get(vsub, VSUB_USE_ATTACHED);
 		vlr_sgs_fsm_update_id(vsub);
 		vsub->cs.attached_via_ran = OSMO_RAT_EUTRAN_SGS;
 
@@ -338,7 +341,7 @@ static struct osmo_fsm sgs_ue_fsm = {
 void vlr_sgs_fsm_init(void)
 {
 	if (osmo_fsm_find_by_name(sgs_ue_fsm.name) != &sgs_ue_fsm)
-		osmo_fsm_register(&sgs_ue_fsm);
+		OSMO_ASSERT(osmo_fsm_register(&sgs_ue_fsm) == 0);
 }
 
 /*! Crate SGs FSM in struct vlr_subscr.
