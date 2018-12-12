@@ -826,9 +826,11 @@ DEFUN(show_subscr,
 		return CMD_WARNING;
 	}
 
-	subscr_dump_full_vty(vty, vsub);
-
+	/* Do not taint the use count in the output. It will not become deallocated, since we are not multi-threaded,
+	 * and since it existed before we called _get() on it above. */
 	vlr_subscr_put(vsub);
+
+	subscr_dump_full_vty(vty, vsub);
 
 	return CMD_SUCCESS;
 }
