@@ -642,6 +642,32 @@ int vlr_subscr_req_sai(struct vlr_subscr *vsub,
 	return vlr_subscr_tx_gsup_message(vsub, &gsup_msg);
 }
 
+/* Initiate Check_IMEI_VLR Procedure (23.018 Chapter 7.1.2.9).
+ * Send the IMEI and wait for ACK. Usually the EIR receives and answers this and checks the device
+ * against a white/grey/blacklist. As of writing, there is no EIR in the Osmocom stack, but HLR
+ * handles the request instead and always replies with ACK. It is theoretically able to save the
+ * IMEI to the HLR DB as side effect (OS#2541). */
+int vlr_subscr_tx_req_check_imei(const struct vlr_subscr *vsub)
+{
+	struct osmo_gsup_message gsup_msg = {0};
+	uint8_t imei_enc[GSM23003_IMEI_NUM_DIGITS+2] = {0};
+	int len;
+
+	/* Encode IMEI */
+	len = gsm48_encode_bcd_number(imei_enc, sizeof(imei_enc), 0, vsub->imei);
+	if (len < 1) {
+		LOGVSUBP(LOGL_ERROR, vsub, "Error: cannot encode IMEI '%s'\n", vsub->imei);
+		return -ENOSPC;
+	}
+	gsup_msg.imei_enc = imei_enc;
+	gsup_msg.imei_enc_len = len;
+
+	/* Send CHECK_IMEI_REQUEST */
+	gsup_msg.message_type = OSMO_GSUP_MSGT_CHECK_IMEI_REQUEST;
+	OSMO_STRLCPY_ARRAY(gsup_msg.imsi, vsub->imsi);
+	return vlr_tx_gsup_message(vsub->vlr, &gsup_msg);
+}
+
 /* Tell HLR that authentication failure occurred */
 int vlr_subscr_tx_auth_fail_rep(const struct vlr_subscr *vsub)
 {
@@ -976,6 +1002,39 @@ static int vlr_subscr_handle_cancel_req(struct vlr_subscr *vsub,
 	return rc;
 }
 
+/* Handle Check_IMEI_VLR error from HLR */
+static int vlr_subscr_handle_check_imei_err(struct vlr_subscr *vsub,
+					    const struct osmo_gsup_message *gsup)
+{
+	if (!vsub->lu_fsm) {
+		LOGVSUBP(LOGL_ERROR, vsub, "Rx GSUP Check_IMEI_VLR error without LU in progress\n");
+		return -ENODEV;
+	}
+
+	LOGVSUBP(LOGL_DEBUG, vsub, "Check_IMEI_VLR failed; gmm_cause: %s\n",
+		 get_value_string(gsm48_gmm_cause_names, gsup->cause));
+
+	osmo_fsm_inst_dispatch(vsub->lu_fsm, VLR_ULA_E_LU_COMPL_FAILURE, (void *)&gsup->cause);
+	return 0;
+}
+
+/* Handle Check_IMEI_VLR result from HLR */
+static int vlr_subscr_handle_check_imei_res(struct vlr_subscr *vsub,
+					    const struct osmo_gsup_message *gsup)
+{
+	if (!vsub->lu_fsm) {
+		LOGVSUBP(LOGL_ERROR, vsub, "Rx GSUP Check_IMEI_VLR result without LU in progress\n");
+		return -ENODEV;
+	}
+
+	if (gsup->imei_result == OSMO_GSUP_IMEI_RESULT_ACK)
+		osmo_fsm_inst_dispatch(vsub->lu_fsm, VLR_ULA_E_HLR_IMEI_ACK, (void *)&gsup->cause);
+	else
+		osmo_fsm_inst_dispatch(vsub->lu_fsm, VLR_ULA_E_HLR_IMEI_NACK, (void *)&gsup->cause);
+
+	return 0;
+}
+
 /* Incoming handler for GSUP from HLR.
  * Keep this function non-static for direct invocation by unit tests. */
 int vlr_gsupc_read_cb(struct osmo_gsup_client *gsupc, struct msgb *msg)
@@ -1044,6 +1103,12 @@ int vlr_gsupc_read_cb(struct osmo_gsup_client *gsupc, struct msgb *msg)
 			"Rx GSUP msg_type=%d not yet implemented\n",
 			gsup.message_type);
 		rc = -GMM_CAUSE_MSGT_NOTEXIST_NOTIMPL;
+		break;
+	case OSMO_GSUP_MSGT_CHECK_IMEI_ERROR:
+		rc = vlr_subscr_handle_check_imei_err(vsub, &gsup);
+		break;
+	case OSMO_GSUP_MSGT_CHECK_IMEI_RESULT:
+		rc = vlr_subscr_handle_check_imei_res(vsub, &gsup);
 		break;
 	default:
 		/* Forward message towards MSC */
