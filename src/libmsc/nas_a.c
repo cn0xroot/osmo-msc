@@ -324,7 +324,7 @@ static int nas_a_decode_assignment_failure(struct nas_dec *nas_dec, struct msgb 
 		.msg_type = NAS_MSG_ASSIGNMENT_FAILURE,
 		.msg_name = "BSSMAP Assignment Failure",
 		.assignment_failure = {
-			.bssap_cause = GSM48_RR_CAUSE_ABNORMAL_UNSPEC,
+			.bssap_cause = GSM0808_CAUSE_EQUIPMENT_FAILURE,
 			.rr_cause = GSM48_RR_CAUSE_ABNORMAL_UNSPEC,
 		},
 	};

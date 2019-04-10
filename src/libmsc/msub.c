@@ -121,13 +121,13 @@ void msub_fsm_cleanup(struct osmo_fsm_inst *fi, enum osmo_fsm_term_cause cause)
 #define S(x)	(1 << (x))
 
 static const struct osmo_fsm_state msub_fsm_states[] = {
-	[MSUB_ST_ACTIVE] {
+	[MSUB_ST_ACTIVE] = {
 		.name = "active",
 		.in_event_mask = S(MSUB_EV_ROLE_TERMINATED),
 		.out_state_mask = S(MSUB_ST_TERMINATING),
 		.action = msub_fsm_active,
 	},
-	[MSUB_ST_TERMINATING] {
+	[MSUB_ST_TERMINATING] = {
 		.name = "terminating",
 		.onenter = msub_fsm_terminating_onenter,
 	},
