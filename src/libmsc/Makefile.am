@@ -56,7 +56,6 @@ libmsc_a_SOURCES = \
 	msc_ho.c \
 	nas.c \
 	nas_a.c \
-	nas_iu.c \
 	neighbor_ident.c \
 	neighbor_ident_vty.c \
 	paging.c \
@@ -74,6 +73,12 @@ libmsc_a_SOURCES = \
 	sgs_server.c \
 	sgs_vty.c \
 	$(NULL)
+
+if BUILD_IU
+libmsc_a_SOURCES += \
+	nas_iu.c \
+	$(NULL)
+endif
 
 if BUILD_SMPP
 noinst_HEADERS += \
