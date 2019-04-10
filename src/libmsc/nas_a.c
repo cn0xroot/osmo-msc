@@ -499,7 +499,7 @@ static int nas_a_decode_handover_request(struct nas_dec *nas_dec, const struct m
 
 		if (encr_info.key_len > sizeof(geran_encr.key)) {
 			LOG_NAS_A_DEC_MSG(LOGL_ERROR, "Failed to decode Encryption Informaiton IE:"
-					  " encryption key is too long: %u\n", geran_encr.key);
+					  " encryption key is too long: %u\n", geran_encr.key_len);
 			return -EINVAL;
 		}
 
