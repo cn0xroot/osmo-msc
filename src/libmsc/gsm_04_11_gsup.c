@@ -91,8 +91,6 @@ int gsm411_gsup_mo_fwd_sm_req(struct gsm_trans *trans, struct msgb *msg,
 	gsup_msg.sm_rp_ui_len = msgb_l4len(msg);
 	gsup_msg.sm_rp_ui = (uint8_t *) msgb_sms(msg);
 
-	gsup_msg.kind = OSMO_GSUP_KIND_SMS;
-
 	return gsup_client_mux_tx(trans->net->gcm, &gsup_msg);
 }
 
