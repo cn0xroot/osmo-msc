@@ -56,6 +56,7 @@
 #include <osmocom/msc/gsm_04_14.h>
 #include <osmocom/msc/signal.h>
 #include <osmocom/msc/mncc_int.h>
+#include <osmocom/msc/osmux.h>
 #include <osmocom/msc/rrlp.h>
 #include <osmocom/msc/vlr_sgs.h>
 #include <osmocom/msc/sgs_vty.h>
@@ -504,6 +505,22 @@ DEFUN(cfg_msc_no_sms_over_gsup, cfg_msc_no_sms_over_gsup_cmd,
 	return CMD_SUCCESS;
 }
 
+#define OSMUX_STR "RTP multiplexing\n"
+DEFUN(cfg_msc_osmux,
+      cfg_msc_osmux_cmd,
+      "osmux (on|off|only)",
+       OSMUX_STR "Enable OSMUX\n" "Disable OSMUX\n" "Only use OSMUX\n")
+{
+	if (strcmp(argv[0], "off") == 0)
+		gsmnet->use_osmux = OSMUX_USAGE_OFF;
+	else if (strcmp(argv[0], "on") == 0)
+		gsmnet->use_osmux = OSMUX_USAGE_ON;
+	else if (strcmp(argv[0], "only") == 0)
+		gsmnet->use_osmux = OSMUX_USAGE_ONLY;
+
+	return CMD_SUCCESS;
+}
+
 static int config_write_msc(struct vty *vty)
 {
 	vty_out(vty, "msc%s", VTY_NEWLINE);
@@ -545,6 +562,11 @@ static int config_write_msc(struct vty *vty)
 
 	if (gsmnet->sms_over_gsup)
 		vty_out(vty, " sms-over-gsup%s", VTY_NEWLINE);
+
+	if (gsmnet->use_osmux != OSMUX_USAGE_OFF) {
+		vty_out(vty, " osmux %s%s", gsmnet->use_osmux == OSMUX_USAGE_ON ? "on" : "only",
+			VTY_NEWLINE);
+	}
 
 	mgcp_client_config_write(vty, " ");
 #ifdef BUILD_IU
@@ -1692,6 +1714,7 @@ void msc_vty_init(struct gsm_network *msc_network)
 	install_element(MSC_NODE, &cfg_msc_emergency_msisdn_cmd);
 	install_element(MSC_NODE, &cfg_msc_sms_over_gsup_cmd);
 	install_element(MSC_NODE, &cfg_msc_no_sms_over_gsup_cmd);
+	install_element(MSC_NODE, &cfg_msc_osmux_cmd);
 
 	mgcp_client_vty_init(msc_network, MSC_NODE, &msc_network->mgw.conf);
 #ifdef BUILD_IU

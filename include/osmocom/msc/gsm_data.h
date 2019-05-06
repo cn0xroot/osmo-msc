@@ -18,6 +18,7 @@
 #include <osmocom/msc/msc_common.h>
 
 #include "gsm_data_shared.h"
+#include "osmux.h"
 
 /* TS 48.008 DLCI containing DCCH/ACCH + SAPI */
 #define OMSC_LINKID_CB(__msgb)   (__msgb)->cb[3]
@@ -228,6 +229,9 @@ struct gsm_network {
 	 * If no name is set, the IPA Serial Number will be the same as the Unit Name,
 	 * and will be of the form 'MSC-00-00-00-00-00-00' */
 	char *msc_ipa_name;
+
+	/* Whether we want to use Osmux against BSCs. Controlled via VTY */
+	enum osmux_usage use_osmux;
 };
 
 struct osmo_esme;
