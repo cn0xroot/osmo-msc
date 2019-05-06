@@ -22,6 +22,7 @@ DVLR New subscr, IMSI: 901700000010650
 DREF VLR subscr IMSI-901700000010650 + conn: now used by 2 (_lu_fsm_associate_vsub,conn)
 DMM RAN_conn(IMSI-901700000010650:UTRAN-Iu-42:LU){RAN_CONN_S_NEW}: Updated ID
 DREF VLR subscr IMSI-901700000010650 - _lu_fsm_associate_vsub: now used by 1 (conn)
+DVLR vlr_lu_fsm(IMSI-901700000010650:UTRAN-Iu-42:LU){VLR_ULA_S_IDLE}: vlr_loc_upd_node1_pre()
 DVLR vlr_lu_fsm(IMSI-901700000010650:UTRAN-Iu-42:LU){VLR_ULA_S_IDLE}: vlr_loc_upd_node1()
 DVLR vlr_lu_fsm(IMSI-901700000010650:UTRAN-Iu-42:LU){VLR_ULA_S_IDLE}: state_chg to VLR_ULA_S_WAIT_AUTH
 DVLR VLR_Authenticate(IMSI-901700000010650:UTRAN-Iu-42:LU){VLR_SUB_AS_NEEDS_AUTH}: Allocated
@@ -402,6 +403,7 @@ DVLR New subscr, IMSI: 901700000010650
 DREF VLR subscr IMSI-901700000010650 + conn: now used by 2 (_lu_fsm_associate_vsub,conn)
 DMM RAN_conn(IMSI-901700000010650:UTRAN-Iu-42:LU){RAN_CONN_S_NEW}: Updated ID
 DREF VLR subscr IMSI-901700000010650 - _lu_fsm_associate_vsub: now used by 1 (conn)
+DVLR vlr_lu_fsm(IMSI-901700000010650:UTRAN-Iu-42:LU){VLR_ULA_S_IDLE}: vlr_loc_upd_node1_pre()
 DVLR vlr_lu_fsm(IMSI-901700000010650:UTRAN-Iu-42:LU){VLR_ULA_S_IDLE}: vlr_loc_upd_node1()
 DVLR vlr_lu_fsm(IMSI-901700000010650:UTRAN-Iu-42:LU){VLR_ULA_S_IDLE}: state_chg to VLR_ULA_S_WAIT_AUTH
 DVLR VLR_Authenticate(IMSI-901700000010650:UTRAN-Iu-42:LU){VLR_SUB_AS_NEEDS_AUTH}: Allocated
@@ -780,6 +782,7 @@ DVLR New subscr, IMSI: 901700000010650
 DREF VLR subscr IMSI-901700000010650 + conn: now used by 2 (_lu_fsm_associate_vsub,conn)
 DMM RAN_conn(IMSI-901700000010650:UTRAN-Iu-42:LU){RAN_CONN_S_NEW}: Updated ID
 DREF VLR subscr IMSI-901700000010650 - _lu_fsm_associate_vsub: now used by 1 (conn)
+DVLR vlr_lu_fsm(IMSI-901700000010650:UTRAN-Iu-42:LU){VLR_ULA_S_IDLE}: vlr_loc_upd_node1_pre()
 DVLR vlr_lu_fsm(IMSI-901700000010650:UTRAN-Iu-42:LU){VLR_ULA_S_IDLE}: vlr_loc_upd_node1()
 DVLR vlr_lu_fsm(IMSI-901700000010650:UTRAN-Iu-42:LU){VLR_ULA_S_IDLE}: state_chg to VLR_ULA_S_WAIT_AUTH
 DVLR VLR_Authenticate(IMSI-901700000010650:UTRAN-Iu-42:LU){VLR_SUB_AS_NEEDS_AUTH}: Allocated
@@ -1123,6 +1126,7 @@ DVLR New subscr, IMSI: 901700000010650
 DREF VLR subscr IMSI-901700000010650 + conn: now used by 2 (_lu_fsm_associate_vsub,conn)
 DMM RAN_conn(IMSI-901700000010650:UTRAN-Iu-42:LU){RAN_CONN_S_NEW}: Updated ID
 DREF VLR subscr IMSI-901700000010650 - _lu_fsm_associate_vsub: now used by 1 (conn)
+DVLR vlr_lu_fsm(IMSI-901700000010650:UTRAN-Iu-42:LU){VLR_ULA_S_IDLE}: vlr_loc_upd_node1_pre()
 DVLR vlr_lu_fsm(IMSI-901700000010650:UTRAN-Iu-42:LU){VLR_ULA_S_IDLE}: vlr_loc_upd_node1()
 DVLR vlr_lu_fsm(IMSI-901700000010650:UTRAN-Iu-42:LU){VLR_ULA_S_IDLE}: state_chg to VLR_ULA_S_WAIT_AUTH
 DVLR VLR_Authenticate(IMSI-901700000010650:UTRAN-Iu-42:LU){VLR_SUB_AS_NEEDS_AUTH}: Allocated
@@ -1465,6 +1469,7 @@ DVLR New subscr, IMSI: 901700000010650
 DREF VLR subscr IMSI-901700000010650 + conn: now used by 2 (_lu_fsm_associate_vsub,conn)
 DMM RAN_conn(IMSI-901700000010650:UTRAN-Iu-42:LU){RAN_CONN_S_NEW}: Updated ID
 DREF VLR subscr IMSI-901700000010650 - _lu_fsm_associate_vsub: now used by 1 (conn)
+DVLR vlr_lu_fsm(IMSI-901700000010650:UTRAN-Iu-42:LU){VLR_ULA_S_IDLE}: vlr_loc_upd_node1_pre()
 DVLR vlr_lu_fsm(IMSI-901700000010650:UTRAN-Iu-42:LU){VLR_ULA_S_IDLE}: vlr_loc_upd_node1()
 DVLR vlr_lu_fsm(IMSI-901700000010650:UTRAN-Iu-42:LU){VLR_ULA_S_IDLE}: state_chg to VLR_ULA_S_WAIT_AUTH
 DVLR VLR_Authenticate(IMSI-901700000010650:UTRAN-Iu-42:LU){VLR_SUB_AS_NEEDS_AUTH}: Allocated

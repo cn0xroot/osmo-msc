@@ -112,6 +112,7 @@ DVLR New subscr, IMSI: 901700000004620
 DREF VLR subscr IMSI-901700000004620 + conn: now used by 2 (_lu_fsm_associate_vsub,conn)
 DMM RAN_conn(IMSI-901700000004620:GERAN-A-0:LU){RAN_CONN_S_NEW}: Updated ID
 DREF VLR subscr IMSI-901700000004620 - _lu_fsm_associate_vsub: now used by 1 (conn)
+DVLR vlr_lu_fsm(IMSI-901700000004620:GERAN-A-0:LU){VLR_ULA_S_IDLE}: vlr_loc_upd_node1_pre()
 DVLR vlr_lu_fsm(IMSI-901700000004620:GERAN-A-0:LU){VLR_ULA_S_IDLE}: vlr_loc_upd_node1()
 DVLR vlr_lu_fsm(IMSI-901700000004620:GERAN-A-0:LU){VLR_ULA_S_IDLE}: vlr_loc_upd_post_auth()
 DVLR vlr_lu_fsm(IMSI-901700000004620:GERAN-A-0:LU){VLR_ULA_S_IDLE}: vlr_loc_upd_post_ciph()
@@ -223,6 +224,7 @@ DREF VLR subscr IMSI-901700000004620:MSISDN-46071 + _lu_fsm_associate_vsub: now 
 DREF VLR subscr IMSI-901700000004620:MSISDN-46071 + conn: now used by 3 (attached,_lu_fsm_associate_vsub,conn)
 DMM RAN_conn(IMSI-901700000004620:MSISDN-46071:GERAN-A-0:LU){RAN_CONN_S_NEW}: Updated ID
 DREF VLR subscr IMSI-901700000004620:MSISDN-46071 - _lu_fsm_associate_vsub: now used by 2 (attached,conn)
+DVLR vlr_lu_fsm(IMSI-901700000004620:MSISDN-46071:GERAN-A-0:LU){VLR_ULA_S_IDLE}: vlr_loc_upd_node1_pre()
 DVLR vlr_lu_fsm(IMSI-901700000004620:MSISDN-46071:GERAN-A-0:LU){VLR_ULA_S_IDLE}: vlr_loc_upd_node1()
 DVLR vlr_lu_fsm(IMSI-901700000004620:MSISDN-46071:GERAN-A-0:LU){VLR_ULA_S_IDLE}: vlr_loc_upd_post_auth()
 DVLR vlr_lu_fsm(IMSI-901700000004620:MSISDN-46071:GERAN-A-0:LU){VLR_ULA_S_IDLE}: vlr_loc_upd_post_ciph()
@@ -396,6 +398,7 @@ DMM IDENTITY RESPONSE: MI=IMSI-901700000004620
 DVLR set IMSI on subscriber; IMSI=901700000004620 id=901700000004620
 DVLR vlr_lu_fsm(TMSI-0x23422342:GERAN-A-0:LU){VLR_ULA_S_WAIT_IMSI}: Received Event VLR_ULA_E_ID_IMSI
 DVLR set IMSI on subscriber; IMSI=901700000004620 id=901700000004620
+DVLR vlr_lu_fsm(TMSI-0x23422342:GERAN-A-0:LU){VLR_ULA_S_WAIT_IMSI}: vlr_loc_upd_node1_pre()
 DVLR vlr_lu_fsm(TMSI-0x23422342:GERAN-A-0:LU){VLR_ULA_S_WAIT_IMSI}: vlr_loc_upd_node1()
 DVLR vlr_lu_fsm(TMSI-0x23422342:GERAN-A-0:LU){VLR_ULA_S_WAIT_IMSI}: vlr_loc_upd_post_auth()
 DVLR vlr_lu_fsm(TMSI-0x23422342:GERAN-A-0:LU){VLR_ULA_S_WAIT_IMSI}: vlr_loc_upd_post_ciph()
