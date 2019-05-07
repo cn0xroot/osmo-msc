@@ -95,6 +95,29 @@ static struct ran_conn *ran_conn_lookup_a(const struct gsm_network *network, int
 	return NULL;
 }
 
+/* We expect BSC to provide use with an Osmocom extension TLV in BSSMAP_RESET to
+ * announce Osmux support */
+static void update_bsc_osmux_support(struct bsc_context *bsc, struct msgb *msg)
+{
+	struct tlv_parsed tp;
+	int rc;
+	bool old_value = bsc->remote_supports_osmux;
+	/*TODO tlv_parse, check for GSM0808_IE_OSMO_OSMUX_CID existance. If present, set */
+	rc = tlv_parse(&tp, gsm0808_att_tlvdef(), msg->l3h + 1, msgb_l3len(msg) - 1, 0, 0);
+	if (rc < 0)
+		LOGP(DBSSAP, LOGL_NOTICE, "Failed parsing TLV looking for Osmux support\n");
+
+	if (TLVP_PRESENT(&tp, GSM0808_IE_OSMO_OSMUX_SUPPORT)) {
+		bsc->remote_supports_osmux = true;
+	} else {
+		bsc->remote_supports_osmux = false;
+	}
+
+	if (old_value != bsc->remote_supports_osmux)
+		LOGP(DBSSAP, LOGL_INFO, "BSC detected AoIP Osmux support changed: %d->%d\n",
+		     old_value, bsc->remote_supports_osmux);
+}
+
 /*
  * BSSMAP handling for UNITDATA
  */
@@ -122,6 +145,8 @@ static void bssmap_rx_reset(struct osmo_sccp_user *scu, const struct a_conn_info
 	/* Treat an incoming RESET like an ACK to any RESET request we may have just sent.
 	 * After all, what we wanted is the A interface to be reset, which we now know has happened. */
 	a_reset_ack_confirm(a_conn_info->bsc->reset_fsm);
+
+	update_bsc_osmux_support(a_conn_info->bsc, msg);
 }
 
 /* Endpoint to handle BSSMAP reset acknowlegement */
@@ -147,6 +172,8 @@ static void bssmap_rx_reset_ack(const struct osmo_sccp_user *scu, const struct a
 	/* Confirm that we managed to get the reset ack message
 	 * towards the connection reset logic */
 	a_reset_ack_confirm(a_conn_info->bsc->reset_fsm);
+
+	update_bsc_osmux_support(a_conn_info->bsc, msg);
 }
 
 /* Handle UNITDATA BSSMAP messages */

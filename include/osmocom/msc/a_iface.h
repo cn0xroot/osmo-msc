@@ -49,6 +49,9 @@ struct bsc_context {
 	 * with the A interface. We need this information
 	 * to send the resets and to send paging requests */
 	struct osmo_sccp_user *sccp_user;
+
+	/* Whether we detected the BSC supports Osmux (during BSSMAP_RESET) */
+	bool remote_supports_osmux;
 };
 
 /* Initalize A interface connection between to MSC and BSC */
