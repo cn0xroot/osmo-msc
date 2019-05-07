@@ -455,12 +455,34 @@ int a_iface_tx_classmark_request(const struct ran_conn *conn)
 	return a_iface_tx_bssap(conn, msg);
 }
 
+/* Send reset to the remote BSC */ //struct osmo_sccp_user *scu,
+static void a_iface_tx_reset(struct bsc_context *bsc_ctx)
+{
+	struct osmo_ss7_instance *ss7;
+	struct msgb *msg;
+
+	OSMO_ASSERT(gsm_network);
+	ss7 = osmo_ss7_instance_find(gsm_network->a.cs7_instance);
+	OSMO_ASSERT(ss7);
+	LOGP(DBSSAP, LOGL_NOTICE, "Tx BSSMAP RESET to BSC %s\n", osmo_sccp_addr_name(ss7, &bsc_ctx->bsc_addr));
+	msg = gsm0808_create_reset();
+
+	osmo_sccp_tx_unitdata_msg(bsc_ctx->sccp_user, &bsc_ctx->msc_addr,
+				  &bsc_ctx->bsc_addr, msg);
+}
+
+void a_iface_tx_reset_ack(struct osmo_sccp_user *scu, struct bsc_context *bsc_ctx)
+{
+	struct msgb *msg;
+	msg = gsm0808_create_reset_ack();
+
+	osmo_sccp_tx_unitdata_msg(scu, &bsc_ctx->msc_addr, &bsc_ctx->bsc_addr,
+				  msg);
+}
 /* Callback function: Close all open connections */
 static void a_reset_cb(const void *priv)
 {
-	struct msgb *msg;
 	struct bsc_context *bsc_ctx = (struct bsc_context*) priv;
-	struct osmo_ss7_instance *ss7;
 
 	/* Skip if the A interface is not properly initalized yet */
 	if (!gsm_network)
@@ -470,12 +492,7 @@ static void a_reset_cb(const void *priv)
 	a_clear_all(bsc_ctx->sccp_user, &bsc_ctx->bsc_addr);
 
 	/* Send reset to the remote BSC */
-	ss7 = osmo_ss7_instance_find(gsm_network->a.cs7_instance);
-	OSMO_ASSERT(ss7);
-	LOGP(DBSSAP, LOGL_NOTICE, "Tx BSSMAP RESET to BSC %s\n", osmo_sccp_addr_name(ss7, &bsc_ctx->bsc_addr));
-	msg = gsm0808_create_reset();
-	osmo_sccp_tx_unitdata_msg(bsc_ctx->sccp_user, &bsc_ctx->msc_addr,
-				  &bsc_ctx->bsc_addr, msg);
+	a_iface_tx_reset(bsc_ctx);
 }
 
 /* Add a new BSC connection to our internal list with known BSCs */

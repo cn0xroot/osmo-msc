@@ -75,6 +75,8 @@ int a_iface_tx_clear_cmd(const struct ran_conn *conn);
 
 int a_iface_tx_classmark_request(const struct ran_conn *conn);
 
+void a_iface_tx_reset_ack(struct osmo_sccp_user *scu, struct bsc_context *bsc_ctx);
+
 /* Clear all RAN connections on a specified BSC
  * (Helper function for a_iface_bssap.c) */
 void a_clear_all(struct osmo_sccp_user *scu, const struct osmo_sccp_addr *bsc_addr);

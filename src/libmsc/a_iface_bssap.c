@@ -133,8 +133,8 @@ static void bssmap_rx_reset(struct osmo_sccp_user *scu, const struct a_conn_info
 
 	LOGP(DBSSAP, LOGL_NOTICE, "Rx BSSMAP RESET from BSC %s, sending RESET ACK\n",
 	     osmo_sccp_addr_name(ss7, &a_conn_info->bsc->bsc_addr));
-	osmo_sccp_tx_unitdata_msg(scu, &a_conn_info->bsc->msc_addr, &a_conn_info->bsc->bsc_addr,
-				  gsm0808_create_reset_ack());
+
+	a_iface_tx_reset_ack(scu, a_conn_info->bsc);
 
 	/* Make sure all orphand RAN connections will be cleard */
 	a_clear_all(scu, &a_conn_info->bsc->bsc_addr);
