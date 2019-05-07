@@ -591,6 +591,29 @@ static int bssmap_rx_ass_compl(struct ran_conn *conn, struct msgb *msg,
 		return -EINVAL;
 	}
 
+	if (TLVP_PRESENT(tp, GSM0808_IE_OSMO_OSMUX_CID)) {
+		if (conn->network->use_osmux == OSMUX_USAGE_OFF) {
+			LOGPCONN(conn, LOGL_ERROR, "BSC using Osmux but we have it disabled.\n");
+			return -EINVAL;
+		}
+		info.use_osmux = true;
+		rc = gsm0808_dec_osmux_cid(&info.osmux_cid,
+					   TLVP_VAL(tp, GSM0808_IE_OSMO_OSMUX_CID),
+					   TLVP_LEN(tp, GSM0808_IE_OSMO_OSMUX_CID));
+		if (rc < 0) {
+			LOGPCONN(conn, LOGL_ERROR, "Unable to decode Osmux CID.\n");
+			return -EINVAL;
+		}
+	} else {
+		if (conn->network->use_osmux == OSMUX_USAGE_ONLY) {
+			LOGPCONN(conn, LOGL_ERROR, "BSC not using Osmux but we are forced to use it.\n");
+			return -EINVAL;
+		} else if (conn->network->use_osmux == OSMUX_USAGE_ON) {
+			LOGPCONN(conn, LOGL_NOTICE, "BSC not using Osmux but we have Osmux enabled.\n");
+			return -EINVAL;
+		}
+	}
+
 	/* Decode speech codec (choosen) element */
 	rc = gsm0808_dec_speech_codec(&sc, TLVP_VAL(tp, GSM0808_IE_SPEECH_CODEC),
 					 TLVP_LEN(tp, GSM0808_IE_SPEECH_CODEC));
@@ -599,7 +622,7 @@ static int bssmap_rx_ass_compl(struct ran_conn *conn, struct msgb *msg,
 		return -EINVAL;
 	}
 	conn->rtp.codec_ran = mgcp_codec_from_sc(&sc);
-
+	/*TODO: pass osmux_cid */
 	/* use address / port supplied with the AoIP
 	 * transport address element */
 	if (rtp_addr.ss_family == AF_INET) {

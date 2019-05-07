@@ -60,6 +60,8 @@ struct mgcp_ctx {
 struct msc_mgcp_ass_complete_info {
 	char addr[INET_ADDRSTRLEN];
 	uint16_t port;
+	bool use_osmux;
+	uint8_t osmux_cid;
 };
 
 int msc_mgcp_try_call_assignment(struct gsm_trans *trans);

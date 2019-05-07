@@ -376,6 +376,13 @@ static int enc_speech_codec_list(struct gsm0808_speech_codec_list *scl, const st
 	return 0;
 }
 
+static void _gsm0808_ass_compl_extend_osmux(struct msgb *msg, uint8_t cid)
+{
+	OSMO_ASSERT(msg->l3h[1] == msgb_l3len(msg) - 2); /*TL not in len */
+	msgb_tv_put(msg, GSM0808_IE_OSMO_OSMUX_CID, cid);
+	msg->l3h[1] = msgb_l3len(msg) - 2;
+}
+
 /* Send assignment request via A-interface */
 int a_iface_tx_assignment(const struct gsm_trans *trans)
 {
@@ -426,6 +433,10 @@ int a_iface_tx_assignment(const struct gsm_trans *trans)
 	memcpy(&rtp_addr, &rtp_addr_in, sizeof(rtp_addr_in));
 
 	msg = gsm0808_create_ass(&ct, NULL, &rtp_addr, &scl, NULL);
+
+	if (conn->rtp.use_osmux)
+		_gsm0808_ass_compl_extend_osmux(msg, conn->rtp.local_osmux_cid);
+
 	return a_iface_tx_bssap(conn, msg);
 }
 

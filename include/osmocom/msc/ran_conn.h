@@ -144,6 +144,10 @@ struct ran_conn {
 		uint16_t remote_port_cn;
 		char remote_addr_cn[INET_ADDRSTRLEN];
 		enum mgcp_codecs codec_cn;
+
+		bool use_osmux;
+		uint8_t local_osmux_cid; /* Allocated by our MGW */
+		uint8_t remote_osmux_cid; /* Allocated by BSC MGW */
 	} rtp;
 
 	/* which Iu-CS connection, if any. */

@@ -302,8 +302,14 @@ static void fsm_crcx_ran_cb(struct osmo_fsm_inst *fi, uint32_t event, void *data
 		.verb = MGCP_VERB_CRCX,
 		.presence = (MGCP_MSG_PRESENCE_ENDPOINT | MGCP_MSG_PRESENCE_CALL_ID | MGCP_MSG_PRESENCE_CONN_MODE),
 		.call_id = mgcp_ctx->call_id,
-		.conn_mode = MGCP_CONN_RECV_ONLY
+		.conn_mode = MGCP_CONN_RECV_ONLY,
+		.x_osmo_osmux_use = conn->network->use_osmux, /* TODO: check if conn was detected to use Osmux during RESET. If OSMUX_ONLY but conn doesn't support, then drop chan/call */
+		.x_osmo_osmux_cid = -1, /* -1 here means wildcard */
 	};
+
+	if (conn->network->use_osmux)
+		mgcp_msg.presence |= MGCP_MSG_PRESENCE_X_OSMO_OSMUX_CID;
+
 	if (osmo_strlcpy(mgcp_msg.endpoint, mgcp_client_rtpbridge_wildcard(mgcp), sizeof(mgcp_msg.endpoint)) >=
 	    MGCP_ENDPOINT_MAXLEN) {
 		handle_error(mgcp_ctx, MGCP_ERR_TOOLONG, false);
@@ -419,8 +425,14 @@ static void fsm_crcx_cn_cb(struct osmo_fsm_inst *fi, uint32_t event, void *data)
 		.verb = MGCP_VERB_CRCX,
 		.presence = (MGCP_MSG_PRESENCE_ENDPOINT | MGCP_MSG_PRESENCE_CALL_ID | MGCP_MSG_PRESENCE_CONN_MODE),
 		.call_id = mgcp_ctx->call_id,
-		.conn_mode = MGCP_CONN_RECV_ONLY
+		.conn_mode = MGCP_CONN_RECV_ONLY,
+		.x_osmo_osmux_use = conn->network->use_osmux, /* TODO: check if conn was detected to use Osmux during RESET. If OSMUX_ONLY but conn doesn't support, then drop chan/call */
+		.x_osmo_osmux_cid = -1, /* -1 here means wildcard */
 	};
+
+	if (conn->network->use_osmux)
+		mgcp_msg.presence |= MGCP_MSG_PRESENCE_X_OSMO_OSMUX_CID;
+
 	if (osmo_strlcpy(mgcp_msg.endpoint, mgcp_ctx->rtp_endpoint, sizeof(mgcp_msg.endpoint)) >=
 	    MGCP_ENDPOINT_MAXLEN) {
 		handle_error(mgcp_ctx, MGCP_ERR_TOOLONG, true);
@@ -465,6 +477,9 @@ static void mgw_crcx_cn_resp_cb(struct mgcp_response *r, void *priv)
 	/* memorize connection identifier */
 	osmo_strlcpy(mgcp_ctx->conn_id_cn, r->head.conn_id, sizeof(mgcp_ctx->conn_id_cn));
 	LOGPFSML(mgcp_ctx->fsm, LOGL_DEBUG, "CRCX/CN: MGW responded with CI: %s\n", mgcp_ctx->conn_id_cn);
+
+	conn->rtp.use_osmux = r->head.x_osmo_osmux_use;
+	conn->rtp.local_osmux_cid = r->head.x_osmo_osmux_cid;
 
 	rc = mgcp_response_parse_params(r);
 	if (rc) {
@@ -585,8 +600,14 @@ static void fsm_mdcx_cn_cb(struct osmo_fsm_inst *fi, uint32_t event, void *data)
 		.audio_ip = conn->rtp.remote_addr_cn,
 		.audio_port = conn->rtp.remote_port_cn,
 		.codecs[0] = conn->rtp.codec_cn,
-		.codecs_len = 1
+		.codecs_len = 1,
+		.x_osmo_osmux_use = conn->rtp.use_osmux,
+		.x_osmo_osmux_cid = conn->rtp.remote_osmux_cid, /* Tell MGCP to send frames using this CID */
 	};
+
+	if (conn->network->use_osmux)
+		mgcp_msg.presence |= MGCP_MSG_PRESENCE_X_OSMO_OSMUX_CID;
+
 	if (osmo_strlcpy(mgcp_msg.endpoint, mgcp_ctx->rtp_endpoint, sizeof(mgcp_msg.endpoint)) >=
 	    MGCP_ENDPOINT_MAXLEN) {
 		handle_error(mgcp_ctx, MGCP_ERR_TOOLONG, true);
@@ -704,8 +725,14 @@ static void fsm_mdcx_ran_cb(struct osmo_fsm_inst *fi, uint32_t event, void *data
 		.audio_ip = conn->rtp.remote_addr_ran,
 		.audio_port = conn->rtp.remote_port_ran,
 		.codecs[0] = conn->rtp.codec_ran,
-		.codecs_len = 1
+		.codecs_len = 1,
+		.x_osmo_osmux_use = conn->rtp.use_osmux,
+		.x_osmo_osmux_cid = conn->rtp.remote_osmux_cid, /* Tell MGCP to send frames using this CID */
 	};
+
+	if (conn->network->use_osmux)
+		mgcp_msg.presence |= MGCP_MSG_PRESENCE_X_OSMO_OSMUX_CID;
+
 	if (osmo_strlcpy(mgcp_msg.endpoint, mgcp_ctx->rtp_endpoint, sizeof(mgcp_msg.endpoint)) >=
 	    MGCP_ENDPOINT_MAXLEN) {
 		handle_error(mgcp_ctx, MGCP_ERR_TOOLONG, true);
@@ -1079,8 +1106,20 @@ int msc_mgcp_ass_complete(struct ran_conn *conn, struct msc_mgcp_ass_complete_in
 	conn->rtp.remote_port_ran = info->port;
 	osmo_strlcpy(conn->rtp.remote_addr_ran, info->addr, sizeof(conn->rtp.remote_addr_ran));
 
-	LOGP(DMGCP, LOGL_DEBUG, "(subscriber:%s) assignment completed, rtp %s:%d.\n",
-	     vlr_subscr_name(conn->vsub), conn->rtp.remote_addr_ran, info->port);
+	conn->rtp.use_osmux = info->use_osmux;
+	conn->rtp.remote_osmux_cid = info->osmux_cid;
+	if (info->use_osmux && conn->rtp.local_osmux_cid != conn->rtp.remote_osmux_cid) {
+		/* TODO: for now we only support having local receive CID
+		   (allocated by MGW_msc) == remote receive CID (allocated by
+		   MGW_bsc) in osmo-mgw. See OS#2551. */
+		   LOGP(DMGCP, LOGL_ERROR, "(subscriber:%s) BSC allocated CID %u != locally allocated CID %u not supported.\n",
+			vlr_subscr_name(conn->vsub), conn->rtp.remote_osmux_cid, conn->rtp.local_osmux_cid);
+		   return -EINVAL;
+	}
+
+	LOGP(DMGCP, LOGL_DEBUG, "(subscriber:%s) assignment completed, rtp %s:%d (osmux=%s:%u).\n",
+	     vlr_subscr_name(conn->vsub), conn->rtp.remote_addr_ran, info->port,
+	     conn->rtp.use_osmux ? "yes" : "no", conn->rtp.remote_osmux_cid);
 
 	/* Note: We only dispatch the event if we are really waiting for the
 	 * assignment, if we are not yet waiting, there is no need to loudly
