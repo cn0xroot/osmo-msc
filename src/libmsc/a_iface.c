@@ -455,6 +455,14 @@ int a_iface_tx_classmark_request(const struct ran_conn *conn)
 	return a_iface_tx_bssap(conn, msg);
 }
 
+/* Patch regular BSSMAP RESET to add extra T to announce Osmux support (osmocom extension) */
+static void _gsm0808_extend_announce_osmux(struct msgb *msg)
+{
+	OSMO_ASSERT(msg->l3h[1] == msgb_l3len(msg) - 2); /*TL not in len */
+	msgb_put_u8(msg, GSM0808_IE_OSMO_OSMUX_SUPPORT);
+	msg->l3h[1] = msgb_l3len(msg) - 2;
+}
+
 /* Send reset to the remote BSC */ //struct osmo_sccp_user *scu,
 static void a_iface_tx_reset(struct bsc_context *bsc_ctx)
 {
@@ -467,6 +475,9 @@ static void a_iface_tx_reset(struct bsc_context *bsc_ctx)
 	LOGP(DBSSAP, LOGL_NOTICE, "Tx BSSMAP RESET to BSC %s\n", osmo_sccp_addr_name(ss7, &bsc_ctx->bsc_addr));
 	msg = gsm0808_create_reset();
 
+	if (gsm_network->use_osmux != OSMUX_USAGE_OFF)
+		_gsm0808_extend_announce_osmux(msg);
+
 	osmo_sccp_tx_unitdata_msg(bsc_ctx->sccp_user, &bsc_ctx->msc_addr,
 				  &bsc_ctx->bsc_addr, msg);
 }
@@ -475,6 +486,9 @@ void a_iface_tx_reset_ack(struct osmo_sccp_user *scu, struct bsc_context *bsc_ct
 {
 	struct msgb *msg;
 	msg = gsm0808_create_reset_ack();
+
+	if (gsm_network->use_osmux != OSMUX_USAGE_OFF)
+		_gsm0808_extend_announce_osmux(msg);
 
 	osmo_sccp_tx_unitdata_msg(scu, &bsc_ctx->msc_addr, &bsc_ctx->bsc_addr,
 				  msg);
