@@ -50,9 +50,8 @@ static int iucs_rx_rab_assign(struct ran_conn *conn, RANAP_RAB_SetupOrModifiedIt
 	RANAP_RAB_SetupOrModifiedItem_t *item = &setup_ies->raB_SetupOrModifiedItem;
 	RANAP_TransportLayerAddress_t *transp_layer_addr;
 	RANAP_IuTransportAssociation_t *transp_assoc;
-	uint16_t port = 0;
+	struct msc_mgcp_ass_complete_info info = {0};
 	int rc;
-	char addr[INET_ADDRSTRLEN];
 
 	rab_id = item->rAB_ID.buf[0];
 
@@ -63,7 +62,7 @@ static int iucs_rx_rab_assign(struct ran_conn *conn, RANAP_RAB_SetupOrModifiedIt
 		transp_layer_addr = item->transportLayerAddress;
 		transp_assoc = item->iuTransportAssociation;
 
-		rc = ranap_transp_assoc_decode(&port, transp_assoc);
+		rc = ranap_transp_assoc_decode(&info.port, transp_assoc);
 		if (rc != 0) {
 			LOGP(DIUCS, LOGL_ERROR,
 			     "Unable to decode RTP port in RAB assignment (%s rab_id=%hhd)\n",
@@ -71,7 +70,7 @@ static int iucs_rx_rab_assign(struct ran_conn *conn, RANAP_RAB_SetupOrModifiedIt
 			return 0;
 		}
 
-		rc = ranap_transp_layer_addr_decode(addr, sizeof(addr), transp_layer_addr);
+		rc = ranap_transp_layer_addr_decode(info.addr, sizeof(info.addr), transp_layer_addr);
 		if (rc != 0) {
 			LOGP(DIUCS, LOGL_ERROR,
 			     "Unable to decode IP-Address in RAB assignment (%s rab_id=%hhd)\n",
@@ -79,7 +78,7 @@ static int iucs_rx_rab_assign(struct ran_conn *conn, RANAP_RAB_SetupOrModifiedIt
 			return 0;
 		}
 
-		return msc_mgcp_ass_complete(conn, port, addr);
+		return msc_mgcp_ass_complete(conn, &info);
 	}
 
 	LOGP(DIUCS, LOGL_ERROR,

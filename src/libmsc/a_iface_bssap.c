@@ -573,6 +573,7 @@ static int bssmap_rx_ass_compl(struct ran_conn *conn, struct msgb *msg,
 	struct sockaddr_storage rtp_addr;
 	struct gsm0808_speech_codec sc;
 	struct sockaddr_in *rtp_addr_in;
+	struct msc_mgcp_ass_complete_info info = {0};
 	int rc;
 
 	LOGPCONN(conn, LOGL_INFO, "Rx BSSMAP ASSIGNMENT COMPLETE message\n");
@@ -603,7 +604,9 @@ static int bssmap_rx_ass_compl(struct ran_conn *conn, struct msgb *msg,
 	 * transport address element */
 	if (rtp_addr.ss_family == AF_INET) {
 		rtp_addr_in = (struct sockaddr_in *)&rtp_addr;
-		msc_mgcp_ass_complete(conn, osmo_ntohs(rtp_addr_in->sin_port), inet_ntoa(rtp_addr_in->sin_addr));
+		inet_ntop(AF_INET, &rtp_addr_in->sin_addr, info.addr, sizeof(info.addr));
+		info.port = osmo_ntohs(rtp_addr_in->sin_port);
+		msc_mgcp_ass_complete(conn, &info);
 	} else {
 		LOGPCONN(conn, LOGL_ERROR, "Unsopported addressing scheme. (supports only IPV4)\n");
 		return -EINVAL;

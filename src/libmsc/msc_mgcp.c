@@ -1050,18 +1050,18 @@ int msc_mgcp_call_assignment(struct gsm_trans *trans)
  * port: port number of the remote leg.
  * addr: IP-address of the remote leg.
  * Returns -EINVAL on error, 0 on success. */
-int msc_mgcp_ass_complete(struct ran_conn *conn, uint16_t port, char *addr)
+int msc_mgcp_ass_complete(struct ran_conn *conn, struct msc_mgcp_ass_complete_info *info)
 {
 	struct mgcp_ctx *mgcp_ctx;
 
 	OSMO_ASSERT(conn);
 
-	if (port == 0) {
+	if (info->port == 0) {
 		LOGP(DMGCP, LOGL_ERROR, "(subscriber:%s) invalid remote call leg port, assignment completion failed\n",
 		     vlr_subscr_name(conn->vsub));
 		return -EINVAL;
 	}
-	if (!addr || strlen(addr) <= 0) {
+	if (!info->addr || strlen(info->addr) <= 0) {
 		LOGP(DMGCP, LOGL_ERROR, "(subscriber:%s) missing remote call leg address, assignment completion failed\n",
 		     vlr_subscr_name(conn->vsub));
 		return -EINVAL;
@@ -1076,11 +1076,11 @@ int msc_mgcp_ass_complete(struct ran_conn *conn, uint16_t port, char *addr)
 
 	/* Memorize port and IP-Address of the remote RAN call leg. We need this
 	 * information at latest when we enter the MDCX phase for the RAN side. */
-	conn->rtp.remote_port_ran = port;
-	osmo_strlcpy(conn->rtp.remote_addr_ran, addr, sizeof(conn->rtp.remote_addr_ran));
+	conn->rtp.remote_port_ran = info->port;
+	osmo_strlcpy(conn->rtp.remote_addr_ran, info->addr, sizeof(conn->rtp.remote_addr_ran));
 
 	LOGP(DMGCP, LOGL_DEBUG, "(subscriber:%s) assignment completed, rtp %s:%d.\n",
-	     vlr_subscr_name(conn->vsub), conn->rtp.remote_addr_ran, port);
+	     vlr_subscr_name(conn->vsub), conn->rtp.remote_addr_ran, info->port);
 
 	/* Note: We only dispatch the event if we are really waiting for the
 	 * assignment, if we are not yet waiting, there is no need to loudly
